@@ -1,95 +1,26 @@
 "use client"
 
-import { useState, Suspense, useRef } from "react"
+import { useState } from "react"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, Environment, Grid, Center } from "@react-three/drei"
-import { Box, Download, RotateCw, ZoomIn, ZoomOut, Maximize2, FileBox, Layers } from "lucide-react"
-import type * as THREE from "three"
+import { Box, Download, RotateCw, ZoomIn, ZoomOut, Maximize2, FileBox, Layers, Loader2 } from "lucide-react"
 
-function RotatingModel({ autoRotate }: { autoRotate: boolean }) {
-  const meshRef = useRef<THREE.Mesh>(null)
+// Dynamically import the entire 3D viewer with SSR disabled
+const ThreeViewer = dynamic(() => import("@/components/three-viewer"), {
+  ssr: false,
+  loading: () => <LoadingPlaceholder />,
+})
 
-  useFrame((_, delta) => {
-    if (meshRef.current && autoRotate) {
-      meshRef.current.rotation.y += delta * 0.5
-    }
-  })
-
+function LoadingPlaceholder() {
   return (
-    <Center>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        {/* Sample 3D object - simulating a scanned vase */}
-        <group>
-          {/* Base */}
-          <mesh position={[0, -0.8, 0]}>
-            <cylinderGeometry args={[0.4, 0.5, 0.2, 32]} />
-            <meshStandardMaterial color="#64748b" metalness={0.3} roughness={0.7} />
-          </mesh>
-          {/* Body */}
-          <mesh position={[0, 0, 0]}>
-            <latheGeometry
-              args={[
-                [
-                  [0.3, -0.7],
-                  [0.5, -0.3],
-                  [0.55, 0],
-                  [0.5, 0.3],
-                  [0.4, 0.5],
-                  [0.3, 0.7],
-                  [0.25, 0.8],
-                ].map(([x, y]) => ({ x, y } as unknown as THREE.Vector2)),
-                32,
-              ]}
-            />
-            <meshStandardMaterial color="#0ea5e9" metalness={0.2} roughness={0.6} />
-          </mesh>
-          {/* Rim */}
-          <mesh position={[0, 0.85, 0]}>
-            <torusGeometry args={[0.25, 0.05, 16, 32]} />
-            <meshStandardMaterial color="#0ea5e9" metalness={0.3} roughness={0.5} />
-          </mesh>
-        </group>
-      </mesh>
-    </Center>
-  )
-}
-
-function Scene({ autoRotate, wireframe }: { autoRotate: boolean; wireframe: boolean }) {
-  return (
-    <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-      <directionalLight position={[-10, -10, -5]} intensity={0.3} />
-
-      <Suspense fallback={null}>
-        <RotatingModel autoRotate={autoRotate} />
-        <Environment preset="studio" />
-      </Suspense>
-
-      <Grid
-        args={[10, 10]}
-        position={[0, -1, 0]}
-        cellSize={0.5}
-        cellThickness={0.5}
-        cellColor="#1e293b"
-        sectionSize={2}
-        sectionThickness={1}
-        sectionColor="#334155"
-        fadeDistance={10}
-        fadeStrength={1}
-      />
-
-      <OrbitControls
-        enablePan={true}
-        enableZoom={true}
-        enableRotate={true}
-        minDistance={2}
-        maxDistance={10}
-      />
-    </>
+    <div className="w-full h-full flex items-center justify-center bg-neutral-950">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-2" />
+        <p className="text-neutral-400 text-sm">Loading 3D Viewer...</p>
+      </div>
+    </div>
   )
 }
 
@@ -194,13 +125,7 @@ export default function ModelViewerPage() {
           </CardHeader>
           <CardContent>
             <div className="aspect-video bg-neutral-950 rounded-lg overflow-hidden border border-neutral-800">
-              <Canvas
-                shadows
-                camera={{ position: [3, 2, 5], fov: 50 }}
-                style={{ background: "linear-gradient(to bottom, #0a0a0a, #171717)" }}
-              >
-                <Scene autoRotate={autoRotate} wireframe={wireframe} />
-              </Canvas>
+              <ThreeViewer autoRotate={autoRotate} />
             </div>
 
             <div className="mt-4 p-3 bg-neutral-800 rounded flex items-center justify-between text-xs">
